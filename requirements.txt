@@ -3,5 +3,5 @@ uvicorn
 requests
 beautifulsoup4
 transformers
-torch==2.2.0
+pillow
 
