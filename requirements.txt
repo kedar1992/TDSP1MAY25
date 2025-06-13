@@ -1,7 +1,8 @@
 fastapi
 uvicorn
+pydantic
 requests
 beautifulsoup4
-transformers
+numpy
 pillow
 
