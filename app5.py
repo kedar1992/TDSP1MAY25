@@ -15,7 +15,7 @@ from PIL import Image
 # === OpenAI Proxy Config ===
 EMBEDDING_URL = "https://aiproxy.sanand.workers.dev/openai/v1/embeddings"
 EMBEDDING_MODEL = "text-embedding-3-small"
-API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjI0ZHMyMDAwMTE2QGRzLnN0dWR5LmlpdG0uYWMuaW4ifQ.zMwXMjQzRY5qReAa3jvzKD9lyPw0MZm2dbm-5tSfuW0"
+API_KEY = os.environ.get("API_KEY")
 
 # === Jina API Config ===
 JINA_API_KEY = os.environ.get("JINA_API_KEY")
@@ -89,7 +89,7 @@ def get_image_embedding_from_url(url: str):
 
 
 def get_cached_posts():
-    cache_file = 'cached_posts.json'
+    cache_file = 'cached_emb.json'
     source_file = 'post_dump.json'
 
     if os.path.exists(cache_file):
