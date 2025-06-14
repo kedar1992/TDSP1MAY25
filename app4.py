@@ -25,7 +25,7 @@ app = FastAPI()
 
 class QuestionRequest(BaseModel):
     question: str
-    images: Optional[List[str]] = None
+    image: Optional[List[str]] = None
 
 class AnswerResponse(BaseModel):
     answer: str
