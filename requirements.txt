@@ -6,5 +6,5 @@ beautifulsoup4
 numpy
 pillow
 python-multipart
-
+aiohttp
 
