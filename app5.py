@@ -12,12 +12,11 @@ import base64
 from io import BytesIO
 from PIL import Image
 
-# === OpenAI Proxy Config ===
+
 EMBEDDING_URL = "https://aiproxy.sanand.workers.dev/openai/v1/embeddings"
 EMBEDDING_MODEL = "text-embedding-3-small"
 API_KEY = os.environ.get("API_KEY")
 
-# === Jina API Config ===
 JINA_API_KEY = os.environ.get("JINA_API_KEY")
 JINA_EMBEDDING_URL = "https://api.jina.ai/v1/embeddings"
 
@@ -61,7 +60,7 @@ def get_jina_image_embedding(base64_image: str):
 
 def get_image_embedding_from_url(url: str):
     if not url or not url.startswith("http"):
-        print(f"[Image Skipped] Invalid or missing image URL: {url}")
+        print(f"[Image Skipped] Invalid URL: {url}")
         return None
     try:
         head = requests.head(url, timeout=5)
@@ -99,17 +98,15 @@ def get_cached_posts():
                 if data:
                     return data
             except json.JSONDecodeError:
-                print("Cached file is corrupted or empty. Rebuilding cache...")
+                print("Cached file is corrupted ")
 
     if not os.path.exists(source_file):
-        raise FileNotFoundError("post_dump.json not found.")
+        raise FileNotFoundError("post_dump.json.")
 
     with open(source_file, 'r') as f:
         raw_data = json.load(f)
-
     raw_posts = raw_data.get("post_stream", {}).get("posts", [])
     all_post_contents = []
-
     for i, post in enumerate(raw_posts):
         try:
             soup = BeautifulSoup(post["cooked"], "html.parser")
@@ -127,7 +124,6 @@ def get_cached_posts():
                 "image_embeddings": []
             })
         except Exception as e:
-            print(f"Error processing post {i+1}: {e}")
             continue
 
     with open(cache_file, 'w') as f:
@@ -211,7 +207,7 @@ def find_best_markdown_match(question_embedding, folder_path="markdown_files", t
                 best_score = score
                 best_match = {"url": original_url, "text": "refer above article for more details"}
         except Exception as e:
-            print(f"Error embedding markdown title: {e}")
+            print(f"Error title: {e}")
             continue
 
     if best_score >= threshold:
@@ -232,7 +228,7 @@ def answer_question(request: QuestionRequest):
                 if emb is not None:
                     image_embeddings.append(emb)
             except Exception as e:
-                print(f"Error processing attachment: {e}")
+                print(f": {e}")
 
     image_embedding = None
     if image_embeddings:
@@ -240,11 +236,11 @@ def answer_question(request: QuestionRequest):
 
     all_post_contents = get_cached_posts()
     if not all_post_contents:
-        raise HTTPException(status_code=404, detail="No posts found to search.")
+        raise HTTPException(status_code=404, detail="No posts.")
 
     top_results = semantic_search(request.question, all_post_contents, image_embedding=image_embedding)
     if not top_results:
-        return AnswerResponse(answer="No relevant posts found.", links=[])
+        return AnswerResponse(answer="No posts.", links=[])
 
     answer = top_results[0][1]['content']
     links = [{
