@@ -18,8 +18,8 @@ from rapidfuzz import fuzz
 
 EMBEDDING_URL = "https://aiproxy.sanand.workers.dev/openai/v1/embeddings"
 EMBEDDING_MODEL = "text-embedding-3-small"
-#API_KEY = os.environ.get("API_KEY")
-API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjI0ZHMyMDAwMTE2QGRzLnN0dWR5LmlpdG0uYWMuaW4ifQ.zMwXMjQzRY5qReAa3jvzKD9lyPw0MZm2dbm-5tSfuW0"
+API_KEY = os.environ.get("API_KEY")
+#API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjI0ZHMyMDAwMTE2QGRzLnN0dWR5LmlpdG0uYWMuaW4ifQ.zMwXMjQzRY5qReAa3jvzKD9lyPw0MZm2dbm-5tSfuW0"
 JINA_API_KEY = "jina_ea7a5633e1434426b44c98fe0f0abdc3b1WqqCxKuougEsch7W2i0-CElX_J"
 #JINA_API_KEY = os.environ.get("JINA_API_KEY")
 JINA_EMBEDDING_URL = "https://api.jina.ai/v1/embeddings"
