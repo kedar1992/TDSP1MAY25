@@ -25,6 +25,9 @@ import nltk
 nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
 nltk.data.path.append(nltk_data_path)
 
+print("NLTK paths:", nltk.data.path)
+
+
 
 
 
