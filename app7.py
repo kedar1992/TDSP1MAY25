@@ -207,12 +207,16 @@ stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
 
 def preprocess(text):
-    tokens = nltk.word_tokenize(text.lower())
-    filtered = [lemmatizer.lemmatize(w) for w in tokens if w.isalnum() and w not in stop_words]
-    return " ".join(filtered)
+    text = text.lower()
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    tokens = word_tokenize(text)
+    tokens = [word for word in tokens if word not in stop_words]
+    tokens = [lemmatizer.lemmatize(word) for word in tokens]
+    return ' '.join(tokens)
 
 
-def find_best_markdown_match(question, folder_path="markdown_files", threshold=40):
+
+def find_best_markdown_match(question, folder_path="markdown_files", threshold=30):
     best_match = None
     best_score = 0
     processed_question = preprocess(question)
