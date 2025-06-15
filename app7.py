@@ -214,7 +214,10 @@ def find_best_markdown_match(question, folder_path="markdown_files", threshold=4
         title = title_match.group(1)
         original_url = url_match.group(1)
 
-        score = fuzz.token_sort_ratio(question, title)
+        #score = fuzz.token_sort_ratio(question, title)
+        score1 = fuzz.token_set_ratio(question, title)
+        score2 = fuzz.partial_ratio(question, title)
+        score = max(score1, score2)
         if score > best_score:
             best_score = score
             best_match = {"url": original_url, "text": f"refer to: {title}"}
