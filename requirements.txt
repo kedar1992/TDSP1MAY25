@@ -8,5 +8,5 @@ pillow
 python-multipart
 aiohttp
 rapidfuzz
-nltk
+spacy
 

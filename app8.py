@@ -1,4 +1,3 @@
-import nltk
 # Explicitly set the path to bundled NLTK data
 nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
 nltk.data.path.append(nltk_data_path)
@@ -20,16 +19,11 @@ from io import BytesIO
 from PIL import Image
 from fastapi.middleware.cors import CORSMiddleware
 from rapidfuzz import fuzz
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
-from rapidfuzz import fuzz
 import string
+import spacy
+nlp = spacy.load("en_core_web_sm")
 
 
-
-stop_words = set(stopwords.words('english'))
-lemmatizer = WordNetLemmatizer()
 
 
 
@@ -207,18 +201,14 @@ def semantic_search(question, posts, image_embedding=None, top_k_text=10):
     top_results = sorted(refined_results, key=lambda x: x[0], reverse=True)[:3]
     return top_results
 
-
-
-
-
-
 def preprocess(text):
-    text = text.lower()
-    text = text.translate(str.maketrans('', '', string.punctuation))
-    tokens = word_tokenize(text)
-    tokens = [word for word in tokens if word not in stop_words]
-    tokens = [lemmatizer.lemmatize(word) for word in tokens]
+    doc = nlp(text.lower())
+    tokens = [
+        token.lemma_ for token in doc
+        if not token.is_stop and not token.is_punct and not token.is_space
+    ]
     return ' '.join(tokens)
+
 
 
 
