@@ -35,12 +35,12 @@ def run_tests(test_data):
         url = test_data['providers'][0]['config']['url']
         method = test_data['providers'][0]['config']['method']
         headers = test_data['providers'][0]['config']['headers']
-        body_template = test_data['providers'][0]['config']['body']
 
-        # Substitute variables in the body template
-        body = body_template
-        for key, value in vars.items():
-            body = body.replace(f"{{{{ {key} }}}}", value)
+        # Build the request body as a dictionary
+        body_dict = {"question": vars["question"]}
+        if "image" in vars:
+            body_dict["image"] = vars["image"]
+        body = json.dumps(body_dict)
 
         # Send the request
         response = send_request(url, method, headers, body)
