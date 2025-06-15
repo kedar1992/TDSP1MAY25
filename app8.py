@@ -1,9 +1,3 @@
-# Explicitly set the path to bundled NLTK data
-nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
-nltk.data.path.append(nltk_data_path)
-
-print("NLTK paths:", nltk.data.path)
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
