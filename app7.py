@@ -21,6 +21,14 @@ from rapidfuzz import fuzz
 import string
 
 
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
+
+
 
 EMBEDDING_URL = "https://aiproxy.sanand.workers.dev/openai/v1/embeddings"
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -199,12 +207,7 @@ def semantic_search(question, posts, image_embedding=None, top_k_text=10):
 
 
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
 
-stop_words = set(stopwords.words('english'))
-lemmatizer = WordNetLemmatizer()
 
 def preprocess(text):
     text = text.lower()
