@@ -12,14 +12,36 @@ import base64
 from io import BytesIO
 from PIL import Image
 from fastapi.middleware.cors import CORSMiddleware
+from rapidfuzz import fuzz
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from rapidfuzz import fuzz
+import string
+import nltk
+
+
+# Explicitly set the path to bundled NLTK data
+nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
+nltk.data.path.append(nltk_data_path)
+
+print("NLTK paths:", nltk.data.path)
+
+
+
+
+
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
 
 
 
 EMBEDDING_URL = "https://aiproxy.sanand.workers.dev/openai/v1/embeddings"
 EMBEDDING_MODEL = "text-embedding-3-small"
 API_KEY = os.environ.get("API_KEY")
-
-JINA_API_KEY = os.environ.get("JINA_API_KEY")
+#API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjI0ZHMyMDAwMTE2QGRzLnN0dWR5LmlpdG0uYWMuaW4ifQ.zMwXMjQzRY5qReAa3jvzKD9lyPw0MZm2dbm-5tSfuW0"
+JINA_API_KEY = "jina_ea7a5633e1434426b44c98fe0f0abdc3b1WqqCxKuougEsch7W2i0-CElX_J"
+#JINA_API_KEY = os.environ.get("JINA_API_KEY")
 JINA_EMBEDDING_URL = "https://api.jina.ai/v1/embeddings"
 
 app = FastAPI()
@@ -188,9 +210,25 @@ def semantic_search(question, posts, image_embedding=None, top_k_text=10):
     top_results = sorted(refined_results, key=lambda x: x[0], reverse=True)[:3]
     return top_results
 
-def find_best_markdown_match(question_embedding, folder_path="markdown_files", threshold=0.50):
+
+
+
+
+
+def preprocess(text):
+    text = text.lower()
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    tokens = word_tokenize(text)
+    tokens = [word for word in tokens if word not in stop_words]
+    tokens = [lemmatizer.lemmatize(word) for word in tokens]
+    return ' '.join(tokens)
+
+
+
+def find_best_markdown_match(question, folder_path="markdown_files", threshold=30):
     best_match = None
-    best_score = -1
+    best_score = 0
+    processed_question = preprocess(question)
 
     for md_file in glob.glob(os.path.join(folder_path, "*.md")):
         with open(md_file, 'r', encoding='utf-8') as f:
@@ -209,20 +247,22 @@ def find_best_markdown_match(question_embedding, folder_path="markdown_files", t
 
         title = title_match.group(1)
         original_url = url_match.group(1)
+        processed_title = preprocess(title)
 
-        try:
-            title_embedding = get_openai_embedding(title)
-            score = cosine_similarity(question_embedding, title_embedding)
-            if score > best_score:
-                best_score = score
-                best_match = {"url": original_url, "text": "refer above article for more details"}
-        except Exception as e:
-            print(f"Error title: {e}")
-            continue
+        # Combine multiple fuzzy scores
+        score1 = fuzz.token_set_ratio(processed_question, processed_title)
+        score2 = fuzz.partial_ratio(processed_question, processed_title)
+        score = max(score1, score2)
+
+        if score > best_score:
+            best_score = score
+            best_match = {"url": original_url, "text": f"refer to: {title}"}
 
     if best_score >= threshold:
         return best_match
     return None
+
+
 
 @app.post("/api/", response_model=AnswerResponse)
 def answer_question(request: QuestionRequest):
@@ -258,8 +298,8 @@ def answer_question(request: QuestionRequest):
         "text": result[1]['content']
     } for result in top_results]
 
-    question_embedding = get_openai_embedding(request.question)
-    md_match = find_best_markdown_match(question_embedding)
+    md_match = find_best_markdown_match(request.question)
+
     if md_match:
         links.append(md_match)
 
