@@ -1,3 +1,4 @@
+import os
 import nltk
 # Explicitly set the path to bundled NLTK data
 nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
