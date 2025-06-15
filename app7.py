@@ -13,12 +13,15 @@ from io import BytesIO
 from PIL import Image
 from fastapi.middleware.cors import CORSMiddleware
 from rapidfuzz import fuzz
-import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from rapidfuzz import fuzz
 import string
+
+import nltk
+nltk.data.path.append("./nltk_data")
+
 
 
 stop_words = set(stopwords.words('english'))

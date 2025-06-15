@@ -3,5 +3,8 @@
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Download NLTK data
-python -m nltk.downloader punkt stopwords wordnet
+# Create a directory for NLTK data
+mkdir -p ./nltk_data
+
+# Download NLTK resources into that directory
+python -m nltk.downloader -d ./nltk_data punkt stopwords wordnet
