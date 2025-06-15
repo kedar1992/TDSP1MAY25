@@ -17,10 +17,6 @@ import string
 import spacy
 nlp = spacy.load("en_core_web_sm")
 
-
-
-
-
 EMBEDDING_URL = "https://aiproxy.sanand.workers.dev/openai/v1/embeddings"
 EMBEDDING_MODEL = "text-embedding-3-small"
 API_KEY = os.environ.get("API_KEY")
