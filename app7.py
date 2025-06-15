@@ -13,6 +13,12 @@ from io import BytesIO
 from PIL import Image
 from fastapi.middleware.cors import CORSMiddleware
 from rapidfuzz import fuzz
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from rapidfuzz import fuzz
+import string
 
 
 
@@ -192,9 +198,24 @@ def semantic_search(question, posts, image_embedding=None, top_k_text=10):
 
 
 
+
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
+
+def preprocess(text):
+    tokens = nltk.word_tokenize(text.lower())
+    filtered = [lemmatizer.lemmatize(w) for w in tokens if w.isalnum() and w not in stop_words]
+    return " ".join(filtered)
+
+
 def find_best_markdown_match(question, folder_path="markdown_files", threshold=70):
     best_match = None
     best_score = 0
+    processed_question = preprocess(question)
 
     for md_file in glob.glob(os.path.join(folder_path, "*.md")):
         with open(md_file, 'r', encoding='utf-8') as f:
@@ -213,8 +234,13 @@ def find_best_markdown_match(question, folder_path="markdown_files", threshold=7
 
         title = title_match.group(1)
         original_url = url_match.group(1)
+        processed_title = preprocess(title)
 
-        score = fuzz.token_sort_ratio(question, title)
+        # Combine multiple fuzzy scores
+        score1 = fuzz.token_set_ratio(processed_question, processed_title)
+        score2 = fuzz.partial_ratio(processed_question, processed_title)
+        score = max(score1, score2)
+
         if score > best_score:
             best_score = score
             best_match = {"url": original_url, "text": f"refer to: {title}"}
@@ -222,6 +248,7 @@ def find_best_markdown_match(question, folder_path="markdown_files", threshold=7
     if best_score >= threshold:
         return best_match
     return None
+
 
 
 @app.post("/api/", response_model=AnswerResponse)
