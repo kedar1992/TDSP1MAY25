@@ -18,9 +18,13 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from rapidfuzz import fuzz
 import string
-
 import nltk
-nltk.data.path.append("./nltk_data")
+
+
+# Explicitly set the path to bundled NLTK data
+nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
+nltk.data.path.append(nltk_data_path)
+
 
 
 
