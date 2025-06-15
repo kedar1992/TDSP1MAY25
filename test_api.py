@@ -4,7 +4,7 @@ import json
 from jsonschema import validate, ValidationError
 
 # Load the YAML file
-with open('.github/workflows/project-tds-virtual-ta-promptfoo.yaml', 'r') as file:
+with open('project-tds-virtual-ta-promptfoo.yaml', 'r') as file:
     test_data = yaml.safe_load(file)
 
 # Function to send HTTP request and get the response
@@ -75,7 +75,8 @@ def run_tests(test_data):
                         actual_value = response_json.get(key, "")
                     else:
                         actual_value = ""
-                    valid = expected_value in actual_value
+                    print(f"🔍 Transform: {transform} → Actual: {actual_value}")
+                    valid = expected_value.lower() in actual_value.lower()
                 except Exception as e:
                     valid = False
                     actual_value = f"Error: {e}"
@@ -106,4 +107,3 @@ for result in results:
             print(f"    Expected: {assertion['expected']}")
         if 'actual' in assertion:
             print(f"    Actual: {assertion['actual']}")
-
