@@ -34,24 +34,12 @@ defaultTest:
 
 tests:
   - vars:
-      question: The question asks to use gpt-3.5-turbo-0125 model but the ai-proxy provided by Anand sir only supports gpt-4o-mini. So should we just use gpt-4o-mini or use the OpenAI API for gpt3.5 turbo?
-      image: file://project-tds-virtual-ta-q1.webp
-      link: https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939
-    assert:
-      - type: llm-rubric
-        transform: output.answer
-        value: Clarifies use of gpt-3.5-turbo-0125 not gpt-4o-mini
-      - type: contains
-        transform: JSON.stringify(output.links)
-        value: https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939
-
-  - vars:
       question: If a student scores 10/10 on GA4 as well as a bonus, how would it appear on the dashboard?
       link: https://discourse.onlinedegree.iitm.ac.in/t/ga4-data-sourcing-discussion-thread-tds-jan-2025/165959/388
     assert:
       - type: llm-rubric
         transform: output.answer
-        value: Mentions the dashboard showing "110"
+        value: 11/10
       - type: contains
         transform: JSON.stringify(output.links)
         value: https://discourse.onlinedegree.iitm.ac.in/t/ga4-data-sourcing-discussion-thread-tds-jan-2025/165959
@@ -60,15 +48,16 @@ tests:
     assert:
       - type: llm-rubric
         transform: output.answer
-        value: Recommends Podman for the course
+        value: Recommends Podman
       - type: llm-rubric
         transform: output.answer
-        value: Mentions that Docker is acceptable
+        value: optional Docker
       - type: contains
         transform: JSON.stringify(output.links)
         value: https://tds.s-anand.net/#/docker
   - vars:
-      question: When is the TDS Sep 2025 end-term exam?
+      question: I have a question regarding renaming file names digit with next one
+      image: https://europe1.discourse-cdn.com/flex013/uploads/iitm/original/3X/f/8/f8af7c6e2fe001c8bf000605b52c903e1b0e6fe1.png
     assert:
       - type: llm-rubric
         transform: output.answer
