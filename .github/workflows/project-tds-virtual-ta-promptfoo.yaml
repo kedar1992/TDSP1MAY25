@@ -51,7 +51,7 @@ tests:
     assert:
       - type: llm-rubric
         transform: output.answer
-        value: Mentions the dashboard showing "110"
+        value: 11/10
       - type: contains
         transform: JSON.stringify(output.links)
         value: https://discourse.onlinedegree.iitm.ac.in/t/ga4-data-sourcing-discussion-thread-tds-jan-2025/165959
@@ -60,10 +60,10 @@ tests:
     assert:
       - type: llm-rubric
         transform: output.answer
-        value: Recommends Podman for the course
+        value: Recommends Podman
       - type: llm-rubric
         transform: output.answer
-        value: Mentions that Docker is acceptable
+        value: optional Docker
       - type: contains
         transform: JSON.stringify(output.links)
         value: https://tds.s-anand.net/#/docker
