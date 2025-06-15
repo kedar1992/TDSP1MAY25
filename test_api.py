@@ -68,8 +68,17 @@ def run_tests(test_data):
                 })
             elif assertion['type'] == 'llm-rubric':
                 expected_value = assertion['value']
-                actual_value = eval(assertion['transform'], {}, {"output": response_json})
-                valid = expected_value in actual_value
+                transform = assertion['transform']
+                try:
+                    if transform.startswith("output."):
+                        key = transform.split(".", 1)[1]
+                        actual_value = response_json.get(key, "")
+                    else:
+                        actual_value = ""
+                    valid = expected_value in actual_value
+                except Exception as e:
+                    valid = False
+                    actual_value = f"Error: {e}"
                 test_result['assertions'].append({
                     "type": "llm-rubric",
                     "result": valid,
@@ -97,3 +106,4 @@ for result in results:
             print(f"    Expected: {assertion['expected']}")
         if 'actual' in assertion:
             print(f"    Actual: {assertion['actual']}")
+
