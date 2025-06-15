@@ -60,6 +60,7 @@ def run_tests(test_data):
             elif assertion['type'] == 'contains':
                 substring = assertion['value']
                 string = json.dumps(response_json)
+                print(f"🔍 Checking if '{substring}' in:\n{string}\n")
                 valid = contains(substring, string)
                 test_result['assertions'].append({
                     "type": "contains",
