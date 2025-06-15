@@ -21,10 +21,6 @@ from rapidfuzz import fuzz
 import string
 
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-
 stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
 
