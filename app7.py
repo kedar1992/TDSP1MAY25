@@ -212,7 +212,7 @@ def preprocess(text):
     return " ".join(filtered)
 
 
-def find_best_markdown_match(question, folder_path="markdown_files", threshold=70):
+def find_best_markdown_match(question, folder_path="markdown_files", threshold=40):
     best_match = None
     best_score = 0
     processed_question = preprocess(question)
