@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
@@ -15,16 +16,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from rapidfuzz import fuzz
 import string
 import spacy
-import openai
+import openai  # Added for LLM summarization
 
 nlp = spacy.load("en_core_web_sm")
 
 EMBEDDING_URL = "https://aiproxy.sanand.workers.dev/openai/v1/embeddings"
 EMBEDDING_MODEL = "text-embedding-3-small"
 API_KEY = os.environ.get("API_KEY")
-#API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjI0ZHMyMDAwMTE2QGRzLnN0dWR5LmlpdG0uYWMuaW4ifQ.zMwXMjQzRY5qReAa3jvzKD9lyPw0MZm2dbm-5tSfuW0"
 JINA_API_KEY = "jina_ea7a5633e1434426b44c98fe0f0abdc3b1WqqCxKuougEsch7W2i0-CElX_J"
 JINA_EMBEDDING_URL = "https://api.jina.ai/v1/embeddings"
+
+openai.api_key = API_KEY  # Set OpenAI key
 
 app = FastAPI()
 app.add_middleware(
@@ -43,6 +45,7 @@ class AnswerResponse(BaseModel):
     answer: str
     links: List[dict]
 
+# My previous functions here
 def get_openai_embedding(text: str):
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -73,11 +76,14 @@ def get_jina_image_embedding(base64_image: str):
 
 def get_image_embedding_from_url(url: str):
     if not url or not url.startswith("http"):
+        print(f"[Image Skipped] Invalid URL: {url}")
         return None
     try:
         head = requests.head(url, timeout=5)
         if head.status_code != 200 or "image" not in head.headers.get("Content-Type", ""):
+            print(f"[Image Skipped] Not a valid image: {url}")
             return None
+
         payload = {
             "model": "jina-clip-v2",
             "input": [{"image": url}]
@@ -92,12 +98,15 @@ def get_image_embedding_from_url(url: str):
         )
         response.raise_for_status()
         return response.json()["data"][0]["embedding"]
-    except Exception:
+    except Exception as e:
+        print(f"[Image Error] {url} - {e}")
         return None
+
 
 def get_cached_posts():
     cache_file = 'cached_emb.json'
     source_file = 'post_dump.json'
+
     if os.path.exists(cache_file):
         with open(cache_file, 'r') as f:
             try:
@@ -105,18 +114,21 @@ def get_cached_posts():
                 if data:
                     return data
             except json.JSONDecodeError:
-                pass
+                print("Cached file is corrupted ")
+
     if not os.path.exists(source_file):
         raise FileNotFoundError("post_dump.json.")
+
     with open(source_file, 'r') as f:
         raw_data = json.load(f)
     raw_posts = raw_data.get("post_stream", {}).get("posts", [])
     all_post_contents = []
-    for post in raw_posts:
+    for i, post in enumerate(raw_posts):
         try:
             soup = BeautifulSoup(post["cooked"], "html.parser")
             text = soup.get_text()
             images = post.get("images", [])
+
             text_embedding = get_openai_embedding(text)
             all_post_contents.append({
                 "post_number": post["post_number"],
@@ -127,10 +139,12 @@ def get_cached_posts():
                 "text_embedding": text_embedding,
                 "image_embeddings": []
             })
-        except Exception:
+        except Exception as e:
             continue
+
     with open(cache_file, 'w') as f:
         json.dump(all_post_contents, f)
+
     return all_post_contents
 
 def cosine_similarity(a, b):
@@ -140,18 +154,23 @@ def cosine_similarity(a, b):
 
 def semantic_search(question, posts, image_embedding=None, top_k_text=10):
     question_embedding = get_openai_embedding(question)
+
     text_scores = [
         cosine_similarity(question_embedding, post['text_embedding'])
         for post in posts
     ]
+
     text_ranked = sorted(
         zip(text_scores, posts),
         key=lambda x: x[0],
         reverse=True
     )
+
     top_text_results = text_ranked[:top_k_text]
+
     if image_embedding is None:
         return top_text_results[:3]
+
     refined_results = []
     for score, post in top_text_results:
         image_embeds = []
@@ -159,45 +178,21 @@ def semantic_search(question, posts, image_embedding=None, top_k_text=10):
             emb = get_image_embedding_from_url(url)
             if emb is not None:
                 image_embeds.append(emb)
+
         if image_embeds:
             sims = [cosine_similarity(image_embedding, emb) for emb in image_embeds]
             image_score = max(sims)
         else:
             image_score = 0.0
+
         combined_score = (score + image_score) / 2
         if question.lower() in post['content'].lower():
             combined_score += 0.5
+
         refined_results.append((combined_score, post))
+
     top_results = sorted(refined_results, key=lambda x: x[0], reverse=True)[:3]
     return top_results
-
-def find_best_markdown_match(question, folder_path="markdown_files", threshold=30):
-    best_match = None
-    best_score = 0
-    processed_question = preprocess(question)
-    for md_file in glob.glob(os.path.join(folder_path, "*.md")):
-        with open(md_file, 'r', encoding='utf-8') as f:
-            content = f.read()
-        match = re.search(r'^---\\s*(.*?)\\s*---', content, re.DOTALL)
-        if not match:
-            continue
-        front_matter = match.group(1)
-        title_match = re.search(r'title:\\s*\"(.*?)\"', front_matter)
-        url_match = re.search(r'original_url:\\s*\"(.*?)\"', front_matter)
-        if not title_match or not url_match:
-            continue
-        title = title_match.group(1)
-        original_url = url_match.group(1)
-        processed_title = preprocess(title)
-        score1 = fuzz.token_set_ratio(processed_question, processed_title)
-        score2 = fuzz.partial_ratio(processed_question, processed_title)
-        score = max(score1, score2)
-        if score > best_score:
-            best_score = score
-            best_match = {"url": original_url, "text": f"refer to: {title}"}
-    if best_score >= threshold:
-        return best_match
-    return None
 
 def preprocess(text):
     doc = nlp(text.lower())
@@ -207,28 +202,35 @@ def preprocess(text):
     ]
     return ' '.join(tokens)
 
-def generate_suggestion_with_llm(text: str) -> str:
-    openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+
+
+# ... [All your existing helper functions remain unchanged] ...
+
+def generate_summary_from_posts(posts):
+    combined_text = "
+
+".join([post['content'] for _, post in posts])
     prompt = (
-        "You are an assistant that provides helpful, concise suggestions based on forum discussions.\n\n"
-        "Here are some relevant posts:\n"
-        f"{text}\n\n"
-        "Based on these, provide a meaningful and actionable suggestion:"
+        "Based on the following forum posts, provide a helpful and concise summary or suggestion:
+
+"
+        f"{combined_text}
+
+"
+        "Summary:"
     )
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ],
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
             max_tokens=300
         )
         return response.choices[0].message['content'].strip()
     except Exception as e:
-        print(f"OpenAI API error: {e}")
-        return "Could not generate a suggestion at this time."
+        print(f"LLM API error: {e}")
+        return posts[0][1]['content']  # fallback
 
 @app.post("/api/", response_model=AnswerResponse)
 def answer_question(request: QuestionRequest):
@@ -247,4 +249,23 @@ def answer_question(request: QuestionRequest):
     image_embedding = None
     if image_embeddings:
         image_embedding = np.mean(image_embeddings, axis=0)
-   
+
+    all_post_contents = get_cached_posts()
+    if not all_post_contents:
+        raise HTTPException(status_code=404, detail="No posts.")
+
+    top_results = semantic_search(request.question, all_post_contents, image_embedding=image_embedding)
+    if not top_results:
+        return AnswerResponse(answer="No posts.", links=[])
+
+    answer = generate_summary_from_posts(top_results)
+    links = [{
+        "url": result[1]['post_url'],
+        "text": result[1]['content']
+    } for result in top_results]
+
+    md_match = find_best_markdown_match(request.question)
+    if md_match:
+        links.append(md_match)
+
+    return AnswerResponse(answer=answer, links=links)
