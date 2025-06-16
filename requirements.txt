@@ -11,4 +11,5 @@ rapidfuzz
 spacy
 PyYAML
 jsonschema
+openai
 
