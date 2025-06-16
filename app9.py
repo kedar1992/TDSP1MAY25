@@ -223,6 +223,44 @@ def generate_summary_from_posts(posts):
         print(f"LLM API error: {e}")
         return posts[0][1]['content']  # fallback
 
+def find_best_markdown_match(question, folder_path="markdown_files", threshold=30):
+    best_match = None
+    best_score = 0
+    processed_question = preprocess(question)
+
+    for md_file in glob.glob(os.path.join(folder_path, "*.md")):
+        with open(md_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        match = re.search(r'^---\s*(.*?)\s*---', content, re.DOTALL)
+        if not match:
+            continue
+
+        front_matter = match.group(1)
+        title_match = re.search(r'title:\s*"(.*?)"', front_matter)
+        url_match = re.search(r'original_url:\s*"(.*?)"', front_matter)
+
+        if not title_match or not url_match:
+            continue
+
+        title = title_match.group(1)
+        original_url = url_match.group(1)
+        processed_title = preprocess(title)
+
+        # Combine multiple fuzzy scores
+        score1 = fuzz.token_set_ratio(processed_question, processed_title)
+        score2 = fuzz.partial_ratio(processed_question, processed_title)
+        score = max(score1, score2)
+
+        if score > best_score:
+            best_score = score
+            best_match = {"url": original_url, "text": f"refer to: {title}"}
+
+    if best_score >= threshold:
+        return best_match
+    return None
+
+
 @app.post("/api/", response_model=AnswerResponse)
 def answer_question(request: QuestionRequest):
     image_embeddings = []
