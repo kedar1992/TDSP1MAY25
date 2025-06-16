@@ -28,7 +28,7 @@ JINA_API_KEY = "jina_ea7a5633e1434426b44c98fe0f0abdc3b1WqqCxKuougEsch7W2i0-CElX_
 JINA_EMBEDDING_URL = "https://api.jina.ai/v1/embeddings"
 
 openai.api_key = API_KEY
-openai.api_base = "https://aiproxy.sanand.workers.dev/openai/v1"
+openai.api_base = "http://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 
 
 app = FastAPI()
@@ -49,6 +49,14 @@ class AnswerResponse(BaseModel):
     links: List[dict]
 
 
+from openai import OpenAI
+
+# Initialize the OpenAI client with proxy settings
+client = OpenAI(
+    api_key=os.environ.get("API_KEY"),
+    base_url="http://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
+)
+
 def generate_summary_from_posts(posts):
     combined_text = "\n\n".join([post['content'] for _, post in posts])
     prompt = (
@@ -57,16 +65,17 @@ def generate_summary_from_posts(posts):
         "Summary:"
     )
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
             max_tokens=300
         )
-        return response.choices[0].message['content'].strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         print(f"LLM API error: {e}")
         return posts[0][1]['content']  # fallback
+
 
 
 # My previous functions here
