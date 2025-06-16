@@ -22,11 +22,14 @@ nlp = spacy.load("en_core_web_sm")
 
 EMBEDDING_URL = "https://aiproxy.sanand.workers.dev/openai/v1/embeddings"
 EMBEDDING_MODEL = "text-embedding-3-small"
-API_KEY = os.environ.get("API_KEY")
+#API_KEY = os.environ.get("API_KEY")
+API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjI0ZHMyMDAwMTE2QGRzLnN0dWR5LmlpdG0uYWMuaW4ifQ.zMwXMjQzRY5qReAa3jvzKD9lyPw0MZm2dbm-5tSfuW0"
 JINA_API_KEY = "jina_ea7a5633e1434426b44c98fe0f0abdc3b1WqqCxKuougEsch7W2i0-CElX_J"
 JINA_EMBEDDING_URL = "https://api.jina.ai/v1/embeddings"
 
-openai.api_key = API_KEY  # Set OpenAI key
+openai.api_key = API_KEY
+openai.api_base = "https://aiproxy.sanand.workers.dev/openai/v1"
+
 
 app = FastAPI()
 app.add_middleware(
@@ -44,6 +47,27 @@ class QuestionRequest(BaseModel):
 class AnswerResponse(BaseModel):
     answer: str
     links: List[dict]
+
+
+def generate_summary_from_posts(posts):
+    combined_text = "\n\n".join([post['content'] for _, post in posts])
+    prompt = (
+        "Based on the following forum posts, provide a helpful and concise summary or suggestion:\n\n"
+        f"{combined_text}\n\n"
+        "Summary:"
+    )
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=300
+        )
+        return response.choices[0].message['content'].strip()
+    except Exception as e:
+        print(f"LLM API error: {e}")
+        return posts[0][1]['content']  # fallback
+
 
 # My previous functions here
 def get_openai_embedding(text: str):
@@ -204,24 +228,7 @@ def preprocess(text):
 
 # ... [All your existing helper functions remain unchanged] ...
 
-def generate_summary_from_posts(posts):
-    combined_text = "\n\n".join([post['content'] for _, post in posts])
-    prompt = (
-        "Based on the following forum posts, provide a helpful and concise summary or suggestion:\n\n"
-        f"{combined_text}\n\n"
-        "Summary:"
-    )
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=300
-        )
-        return response.choices[0].message['content'].strip()
-    except Exception as e:
-        print(f"LLM API error: {e}")
-        return posts[0][1]['content']  # fallback
+
 
 def find_best_markdown_match(question, folder_path="markdown_files", threshold=30):
     best_match = None
