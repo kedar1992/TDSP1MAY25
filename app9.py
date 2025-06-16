@@ -202,22 +202,13 @@ def preprocess(text):
     ]
     return ' '.join(tokens)
 
-
-
-
 # ... [All your existing helper functions remain unchanged] ...
 
 def generate_summary_from_posts(posts):
-    combined_text = "
-
-".join([post['content'] for _, post in posts])
+    combined_text = "\n\n".join([post['content'] for _, post in posts])
     prompt = (
-        "Based on the following forum posts, provide a helpful and concise summary or suggestion:
-
-"
-        f"{combined_text}
-
-"
+        "Based on the following forum posts, provide a helpful and concise summary or suggestion:\n\n"
+        f"{combined_text}\n\n"
         "Summary:"
     )
     try:
