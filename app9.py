@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
@@ -16,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from rapidfuzz import fuzz
 import string
 import spacy
-import openai  # Added for LLM summarization
+import openai
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -53,28 +52,31 @@ from openai import OpenAI
 
 # Initialize the OpenAI client with proxy settings
 client = OpenAI(
-    api_key=os.environ.get("API_KEY"),
-    base_url="http://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
+    api_key=API_KEY,
+    base_url="http://aiproxy.sanand.workers.dev/openai/v1"
 )
 
 def generate_summary_from_posts(posts):
     combined_text = "\n\n".join([post['content'] for _, post in posts])
+
     prompt = (
-        "Based on the following forum posts, provide a helpful and concise summary or suggestion:\n\n"
+        "You are an academic course assistant. Based on the following forum posts, recommendation"
+        "Keep it under 3 sentences and focus on what the student should do next.\n\n"
         f"{combined_text}\n\n"
-        "Summary:"
+        "Recommendation:"
     )
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=300
+            temperature=0.4,
+            max_tokens=150
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
         print(f"LLM API error: {e}")
-        return posts[0][1]['content']  # fallback
+        return posts[0][1]['content']
 
 
 
@@ -202,7 +204,7 @@ def semantic_search(question, posts, image_embedding=None, top_k_text=10):
     top_text_results = text_ranked[:top_k_text]
 
     if image_embedding is None:
-        return top_text_results[:3]
+        return top_text_results[:4]
 
     refined_results = []
     for score, post in top_text_results:
@@ -224,7 +226,7 @@ def semantic_search(question, posts, image_embedding=None, top_k_text=10):
 
         refined_results.append((combined_score, post))
 
-    top_results = sorted(refined_results, key=lambda x: x[0], reverse=True)[:3]
+    top_results = sorted(refined_results, key=lambda x: x[0], reverse=True)[:4]
     return top_results
 
 def preprocess(text):
