@@ -60,8 +60,8 @@ def generate_summary_from_posts(posts):
     combined_text = "\n\n".join([post['content'] for _, post in posts])
 
     prompt = (
-        "You are an academic course assistant. Based on the following forum posts, recommendation"
-        "Keep it under 3 sentences and focus on what the student should do next.\n\n"
+        "You are an academic course assistant. Based on the following forum posts, provide an recommendation which would student give direction or suggestion for student what to do"
+        "Keep it under 2 sentences & think like you are course professor & no need to go very great technical depth\n\n"
         f"{combined_text}\n\n"
         "Recommendation:"
     )
@@ -71,7 +71,7 @@ def generate_summary_from_posts(posts):
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,
-            max_tokens=150
+            max_tokens=200
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
